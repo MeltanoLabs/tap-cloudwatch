@@ -1,3 +1,5 @@
+"""Class for interacting with Cloudwatch API."""
+
 import os
 import time
 from datetime import datetime
@@ -6,17 +8,21 @@ import boto3
 
 
 class CloudwatchAPI:
+    """Cloudwatch class for interacting with the API."""
 
     def __init__(self):
+        """Initialize CloudwatchAPI."""
         self._client = None
 
     @property
     def client(self):
+        """Property to access client object."""
         if not self._client:
             raise Exception('Client not yet initialized')
         return self._client
 
     def authenticate(self, config):
+        """Authenticate the AWS client."""
         self._client = self._create_client(config)
 
     def _create_client(self, config):
@@ -51,6 +57,7 @@ class CloudwatchAPI:
         return logs
 
     def get_records(self, bookmark, log_group, query, start_date):
+        """Retrieve records from Cloudwatch."""
         # TODO: managed batching
         start_query_response = self.client.start_query(
             logGroupName=log_group,

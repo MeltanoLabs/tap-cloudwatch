@@ -8,16 +8,15 @@ from tap_cloudwatch.client import CloudWatchStream
 
 
 class LogStream(CloudWatchStream):
-    """Define custom stream."""
+    """Log stream."""
+
     name = "log"
-    primary_keys = []
+    primary_keys: List[str] = []
     replication_key = "timestamp"
 
     @property
     def schema(self):
-        """Dynamically detect the json schema for the stream.
-        This is evaluated prior to any records being retrieved.
-        """
+        """Dynamically detect the json schema for the stream."""
         properties: List[th.Property] = []
 
         # TODO: handle parse and unmask syntax

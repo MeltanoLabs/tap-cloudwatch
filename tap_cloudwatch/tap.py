@@ -14,6 +14,7 @@ STREAM_TYPES = [
 
 class TapCloudWatch(Tap):
     """CloudWatch tap class."""
+
     name = "tap-cloudwatch"
 
     config_jsonschema = th.PropertiesList(
