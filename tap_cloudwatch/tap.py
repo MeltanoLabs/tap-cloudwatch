@@ -2,11 +2,11 @@
 
 from typing import List
 
-from singer_sdk import Tap, Stream
+from singer_sdk import Stream, Tap
 from singer_sdk import typing as th
-from tap_cloudwatch.streams import (
-    LogStream,
-)
+
+from tap_cloudwatch.streams import LogStream
+
 STREAM_TYPES = [
     LogStream,
 ]
@@ -33,12 +33,14 @@ class TapCloudWatch(Tap):
             "aws_session_token",
             th.StringType,
             secret=True,
-            description="The session key for your AWS account. This is only needed when you are using temporary credentials."
+            description="The session key for your AWS account. This is only needed when \
+                you are using temporary credentials."
         ),
         th.Property(
             "aws_profile",
             th.StringType,
-            description="The AWS credentials profile name to use. The profile must be configured and accessible."
+            description="The AWS credentials profile name to use. The profile must be \
+                configured and accessible."
         ),
         th.Property(
             "aws_endpoint_url",
@@ -66,10 +68,14 @@ class TapCloudWatch(Tap):
             "query",
             th.StringType,
             required=True,
-            description="The query string to use. For more information, see [CloudWatch Logs Insights Query Syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html)."
+            description="The query string to use. For more information, see [CloudWatch \
+                Logs Insights Query Syntax](https://docs.aws.amazon.com/Amazon\
+                    CloudWatch/latest/logs/CWL_QuerySyntax.html)."
         ),
-        # auto optimize? requests huge limit to start, if timeout then shrink, expand if size=limit
-        # batch window size (default to all but if you hit limit = result size then we could be missing records)
+        # auto optimize? requests huge limit to start, if timeout then shrink,
+        # expand if size=limit
+        # batch window size (default to all but if you hit limit = result size
+        # then we could be missing records)
         # limit (default to something big )
     ).to_dict()
 

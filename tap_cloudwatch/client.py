@@ -1,10 +1,11 @@
 """Custom client handling, including CloudWatchStream base class."""
 
-from typing import Optional, Iterable
-from singer_sdk import typing as th
+from typing import Iterable, Optional
 
 from singer_sdk.streams import Stream
+
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
+
 
 class CloudWatchStream(Stream):
     """Stream class for CloudWatch streams."""
@@ -29,4 +30,3 @@ class CloudWatchStream(Stream):
         )
         for record in query_resp.get('results'):
             yield {i['field'][1:]: i['value'] for i in record}
-

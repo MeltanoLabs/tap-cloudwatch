@@ -1,7 +1,8 @@
-import boto3
 import os
-from datetime import datetime, timedelta
 import time
+from datetime import datetime
+
+import boto3
 
 
 class CloudwatchAPI:
@@ -19,9 +20,15 @@ class CloudwatchAPI:
         self._client = self._create_client(config)
 
     def _create_client(self, config):
-        aws_access_key_id = config.get('aws_access_key_id') or os.environ.get('AWS_ACCESS_KEY_ID')
-        aws_secret_access_key = config.get('aws_secret_access_key') or os.environ.get('AWS_SECRET_ACCESS_KEY')
-        aws_session_token = config.get('aws_session_token') or os.environ.get('AWS_SESSION_TOKEN')
+        aws_access_key_id = config.get(
+            'aws_access_key_id'
+        ) or os.environ.get('AWS_ACCESS_KEY_ID')
+        aws_secret_access_key = config.get(
+            'aws_secret_access_key'
+        ) or os.environ.get('AWS_SECRET_ACCESS_KEY')
+        aws_session_token = config.get(
+            'aws_session_token'
+        ) or os.environ.get('AWS_SESSION_TOKEN')
         aws_profile = config.get('aws_profile') or os.environ.get('AWS_PROFILE')
         aws_endpoint_url = config.get('aws_endpoint_url')
         aws_region_name = config.get('aws_region_name')
@@ -55,14 +62,13 @@ class CloudwatchAPI:
         )
 
         # | sort @timestamp desc
-        # | limit 20 
-
+        # | limit 20
 
         query_id = start_query_response['queryId']
 
         response = None
 
-        while response == None or response['status'] == 'Running':
+        while response is None or response['status'] == 'Running':
             time.sleep(1)
             response = self.client.get_query_results(
                 queryId=query_id

@@ -1,15 +1,14 @@
 """Tests standard tap features using the built-in SDK tests library."""
 
-import datetime
-from freezegun import freeze_time
+from unittest.mock import patch
 
+import boto3
+from botocore.stub import Stubber
+from freezegun import freeze_time
 from singer_sdk.testing import get_standard_tap_tests
 
-from tap_cloudwatch.tap import TapCloudWatch
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
-from botocore.stub import Stubber
-import boto3
-from unittest.mock import patch
+from tap_cloudwatch.tap import TapCloudWatch
 
 SAMPLE_CONFIG = {
     "log_group_name": "my_log_group_name",
@@ -46,7 +45,12 @@ def test_standard_tap_tests(patch_client):
         'get_query_results',
         {
             'status': 'abc',
-            'results': [[{'field': '@timestamp', 'value': '2022-01-01'}, {'field': '@message', 'value': 'abc'}]]
+            'results': [
+                [
+                    {'field': '@timestamp', 'value': '2022-01-01'},
+                    {'field': '@message', 'value': 'abc'}
+                ]
+            ]
         },
         {'queryId': '123'}
     )
