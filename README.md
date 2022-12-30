@@ -1,6 +1,6 @@
 # `tap-cloudwatch`
 
-CloudWatch tap class.
+CloudWatch tap for extracting log data from AWS Cloudwatch Logs Insights API.
 
 Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 

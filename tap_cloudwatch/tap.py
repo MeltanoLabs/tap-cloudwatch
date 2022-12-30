@@ -13,7 +13,7 @@ STREAM_TYPES = [
 
 
 class TapCloudWatch(Tap):
-    """CloudWatch tap class."""
+    """CloudWatch tap for extracting log data from AWS Cloudwatch Logs Insights API."""
 
     name = "tap-cloudwatch"
 
