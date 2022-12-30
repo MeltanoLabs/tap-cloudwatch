@@ -18,7 +18,7 @@ SAMPLE_CONFIG = {
     "start_date": "2022-12-29"
 }
 
-client = boto3.client('logs')
+client = boto3.client('logs', region_name='us-east-1')
 stubber = Stubber(client)
 
 
