@@ -22,48 +22,48 @@ class TapCloudWatch(Tap):
             "aws_access_key_id",
             th.StringType,
             secret=True,
-            description="The access key for your AWS account."
+            description="The access key for your AWS account.",
         ),
         th.Property(
             "aws_secret_access_key",
             th.StringType,
             secret=True,
-            description="he secret key for your AWS account."
+            description="he secret key for your AWS account.",
         ),
         th.Property(
             "aws_session_token",
             th.StringType,
             secret=True,
             description="The session key for your AWS account. This is only needed when \
-                you are using temporary credentials."
+                you are using temporary credentials.",
         ),
         th.Property(
             "aws_profile",
             th.StringType,
             description="The AWS credentials profile name to use. The profile must be \
-                configured and accessible."
+                configured and accessible.",
         ),
         th.Property(
             "aws_endpoint_url",
             th.StringType,
-            description="The complete URL to use for the constructed client."
+            description="The complete URL to use for the constructed client.",
         ),
         th.Property(
             "aws_region_name",
             th.StringType,
-            description="The AWS region name (e.g. us-east-1) "
+            description="The AWS region name (e.g. us-east-1) ",
         ),
         th.Property(
             "start_date",
             th.DateTimeType,
             required=True,
-            description="The earliest record date to sync"
+            description="The earliest record date to sync",
         ),
         th.Property(
             "log_group_name",
             th.StringType,
             required=True,
-            description="The log group on which to perform the query."
+            description="The log group on which to perform the query.",
         ),
         th.Property(
             "query",
@@ -71,7 +71,7 @@ class TapCloudWatch(Tap):
             required=True,
             description="The query string to use. For more information, see [CloudWatch \
                 Logs Insights Query Syntax](https://docs.aws.amazon.com/Amazon\
-                    CloudWatch/latest/logs/CWL_QuerySyntax.html)."
+                    CloudWatch/latest/logs/CWL_QuerySyntax.html).",
         ),
         # auto optimize? requests huge limit to start, if timeout then shrink,
         # expand if size=limit

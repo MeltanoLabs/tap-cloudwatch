@@ -24,9 +24,9 @@ class CloudWatchStream(Stream):
         client.authenticate(self.config)
         query_resp = client.get_records(
             self.get_starting_timestamp(context),
-            self.config.get('log_group_name'),
-            self.config.get('query'),
-            self.config.get('start_date'),
+            self.config.get("log_group_name"),
+            self.config.get("query"),
+            self.config.get("start_date"),
         )
-        for record in query_resp.get('results'):
-            yield {i['field'][1:]: i['value'] for i in record}
+        for record in query_resp.get("results"):
+            yield {i["field"][1:]: i["value"] for i in record}

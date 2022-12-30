@@ -14,51 +14,44 @@ SAMPLE_CONFIG = {
     "log_group_name": "my_log_group_name",
     "query": "fields @timestamp, @message",
     "aws_region_name": "us-east-1",
-    "start_date": "2022-12-29"
+    "start_date": "2022-12-29",
 }
 
-client = boto3.client('logs', region_name='us-east-1')
+client = boto3.client("logs", region_name="us-east-1")
 stubber = Stubber(client)
 
 
 # Run standard built-in tap tests from the SDK:
 @freeze_time("2022-12-30")
-@patch.object(
-    CloudwatchAPI,
-    '_create_client',
-    return_value=client
-)
+@patch.object(CloudwatchAPI, "_create_client", return_value=client)
 def test_standard_tap_tests(patch_client):
     """Run standard tap tests from the SDK."""
     stubber.add_response(
-        'start_query',
-        {'queryId': '123'},
+        "start_query",
+        {"queryId": "123"},
         {
-            'endTime': 1672358400,
-            'limit': 50,
-            'logGroupName': 'my_log_group_name',
-            'queryString': 'fields @timestamp, @message',
-            'startTime': 1672272000
-        }
+            "endTime": 1672358400,
+            "limit": 50,
+            "logGroupName": "my_log_group_name",
+            "queryString": "fields @timestamp, @message",
+            "startTime": 1672272000,
+        },
     )
     stubber.add_response(
-        'get_query_results',
+        "get_query_results",
         {
-            'status': 'abc',
-            'results': [
+            "status": "abc",
+            "results": [
                 [
-                    {'field': '@timestamp', 'value': '2022-01-01'},
-                    {'field': '@message', 'value': 'abc'}
+                    {"field": "@timestamp", "value": "2022-01-01"},
+                    {"field": "@message", "value": "abc"},
                 ]
-            ]
+            ],
         },
-        {'queryId': '123'}
+        {"queryId": "123"},
     )
     stubber.activate()
 
-    tests = get_standard_tap_tests(
-        TapCloudWatch,
-        config=SAMPLE_CONFIG
-    )
+    tests = get_standard_tap_tests(TapCloudWatch, config=SAMPLE_CONFIG)
     for test in tests:
         test()

@@ -21,13 +21,13 @@ class LogStream(CloudWatchStream):
 
         # TODO: handle parse and unmask syntax
         # | parse @message "[*] *" as loggingType, loggingMessage
-        for prop in self.config.get('query').split("|")[0].split(","):
+        for prop in self.config.get("query").split("|")[0].split(","):
             prop = prop.strip()
             if prop.startswith("fields "):
                 prop = prop[7:].strip()
-            if prop.startswith('@'):
+            if prop.startswith("@"):
                 prop = prop[1:]
-            if prop == 'timestamp':
+            if prop == "timestamp":
                 properties.append(th.Property(prop, th.DateTimeType()))
             else:
                 # Assume string type for all fields
