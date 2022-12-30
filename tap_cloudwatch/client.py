@@ -20,13 +20,14 @@ class CloudWatchStream(Stream):
         # TODO: move to iterate batches
         # TODO: log stats metrics returned by cloudwatch
         # self.metrics_logger.info('test')
-        client = CloudwatchAPI()
+        client = CloudwatchAPI(self.logger)
         client.authenticate(self.config)
-        query_resp = client.get_records(
+        cloudwatch_iter = client.get_records_iterator(
             self.get_starting_timestamp(context),
             self.config.get("log_group_name"),
             self.config.get("query"),
-            self.config.get("start_date"),
+            self.config.get("batch_increment_mins"),
         )
-        for record in query_resp.get("results"):
-            yield {i["field"][1:]: i["value"] for i in record}
+        for batch in cloudwatch_iter:
+            for record in batch.get('results'):
+                yield {i["field"][1:]: i["value"] for i in record}

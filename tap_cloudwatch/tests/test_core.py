@@ -31,7 +31,7 @@ def test_standard_tap_tests(patch_client):
         {"queryId": "123"},
         {
             "endTime": 1672358400,
-            "limit": 50,
+            "limit": 10000,
             "logGroupName": "my_log_group_name",
             "queryString": "fields @timestamp, @message",
             "startTime": 1672272000,
@@ -47,6 +47,9 @@ def test_standard_tap_tests(patch_client):
                     {"field": "@message", "value": "abc"},
                 ]
             ],
+            "ResponseMetadata": {
+                "HTTPStatusCode": 200
+            }
         },
         {"queryId": "123"},
     )

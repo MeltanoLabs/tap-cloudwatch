@@ -73,11 +73,17 @@ class TapCloudWatch(Tap):
                 Logs Insights Query Syntax](https://docs.aws.amazon.com/Amazon\
                     CloudWatch/latest/logs/CWL_QuerySyntax.html).",
         ),
-        # auto optimize? requests huge limit to start, if timeout then shrink,
-        # expand if size=limit
-        # batch window size (default to all but if you hit limit = result size
-        # then we could be missing records)
-        # limit (default to something big )
+        th.Property(
+            "batch_increment_mins",
+            th.IntegerType,
+            default=1440, # 1 day
+            description="The size of the time window to query by, default 1440 mins \
+                (i.e. 1 day). The tap will raise an exception if the result set is \
+                greater than the max limit of 10,000 records because it can't be sure \
+                that all data is extracted. If this happens you'll need to reduce \
+                this batch_increment_mins setting to retrieve a smaller record set \
+                per query.",
+        ),
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
