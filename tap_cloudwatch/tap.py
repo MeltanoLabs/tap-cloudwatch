@@ -76,7 +76,7 @@ class TapCloudWatch(Tap):
         th.Property(
             "batch_increment_mins",
             th.IntegerType,
-            default=1440, # 1 day
+            default=1440,  # type: ignore
             description="The size of the time window to query by, default 1440 mins \
                 (i.e. 1 day). The tap will raise an exception if the result set is \
                 greater than the max limit of 10,000 records because it can't be sure \

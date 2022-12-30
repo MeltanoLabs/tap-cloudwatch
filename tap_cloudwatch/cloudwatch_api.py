@@ -72,13 +72,18 @@ class CloudwatchAPI:
         count = 0
         while count < batches:
             if count != 0:
-                # inclusive start and end date, so on second iteration we can skip the first second
+                # Inclusive start and end date, so on second iteration
+                # we can skip one second.
                 query_start = int(start_time + (increment_mins * 60 * count) + 1)
             else:
                 query_start = int(start_time + (increment_mins * 60 * count))
             query_end = int(start_time + (increment_mins * 60 * (count + 1)))
             self.logger.info(
-                f"Retrieving batch from: `{datetime.fromtimestamp(query_start).isoformat()}` - `{datetime.fromtimestamp(query_end).isoformat()}`"
+                f"""
+                Retrieving batch from:
+                 `{datetime.fromtimestamp(query_start).isoformat()}` -
+                 `{datetime.fromtimestamp(query_end).isoformat()}`
+                """
             )
             start_query_response = self.client.start_query(
                 logGroupName=log_group,

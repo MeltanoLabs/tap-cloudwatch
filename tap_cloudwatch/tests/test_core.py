@@ -47,9 +47,7 @@ def test_standard_tap_tests(patch_client):
                     {"field": "@message", "value": "abc"},
                 ]
             ],
-            "ResponseMetadata": {
-                "HTTPStatusCode": 200
-            }
+            "ResponseMetadata": {"HTTPStatusCode": 200},
         },
         {"queryId": "123"},
     )
