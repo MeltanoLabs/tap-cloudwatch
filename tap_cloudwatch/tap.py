@@ -28,20 +28,24 @@ class TapCloudWatch(Tap):
             "aws_secret_access_key",
             th.StringType,
             secret=True,
-            description="he secret key for your AWS account.",
+            description="The secret key for your AWS account.",
         ),
         th.Property(
             "aws_session_token",
             th.StringType,
             secret=True,
-            description="The session key for your AWS account. This is only needed when \
-                you are using temporary credentials.",
+            description=(
+                "The session key for your AWS account. This is only needed when"
+                " you are using temporary credentials."
+            ),
         ),
         th.Property(
             "aws_profile",
             th.StringType,
-            description="The AWS credentials profile name to use. The profile must be \
-                configured and accessible.",
+            description=(
+                "The AWS credentials profile name to use. The profile must be "
+                "configured and accessible."
+            ),
         ),
         th.Property(
             "aws_endpoint_url",
@@ -69,20 +73,24 @@ class TapCloudWatch(Tap):
             "query",
             th.StringType,
             required=True,
-            description="The query string to use. For more information, see [CloudWatch \
-                Logs Insights Query Syntax](https://docs.aws.amazon.com/Amazon\
-                    CloudWatch/latest/logs/CWL_QuerySyntax.html).",
+            description=(
+                "The query string to use. For more information, see [CloudWatch"
+                " Logs Insights Query Syntax](https://docs.aws.amazon.com/Amazon"
+                "CloudWatch/latest/logs/CWL_QuerySyntax.html)."
+            ),
         ),
         th.Property(
             "batch_increment_mins",
             th.IntegerType,
             default=1440,  # type: ignore
-            description="The size of the time window to query by, default 1440 mins \
-                (i.e. 1 day). The tap will raise an exception if the result set is \
-                greater than the max limit of 10,000 records because it can't be sure \
-                that all data is extracted. If this happens you'll need to reduce \
-                this batch_increment_mins setting to retrieve a smaller record set \
-                per query.",
+            description=(
+                "The size of the time window to query by, default 1440 mins"
+                " (i.e. 1 day). The tap will raise an exception if the result set is"
+                " greater than the max limit of 10,000 records because it can't be sure"
+                " that all data is extracted. If this happens you'll need to reduce"
+                " this batch_increment_mins setting to retrieve a smaller record set"
+                " per query."
+            ),
         ),
     ).to_dict()
 

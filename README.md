@@ -18,7 +18,7 @@ Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 | Setting              | Required | Default | Description |
 |:---------------------|:--------:|:-------:|:------------|
 | aws_access_key_id    | False    | None    | The access key for your AWS account. |
-| aws_secret_access_key| False    | None    | he secret key for your AWS account. |
+| aws_secret_access_key| False    | None    | The secret key for your AWS account. |
 | aws_session_token    | False    | None    | The session key for your AWS account. This is only needed when you are using temporary credentials. |
 | aws_profile          | False    | None    | The AWS credentials profile name to use. The profile must be configured and accessible. |
 | aws_endpoint_url     | False    | None    | The complete URL to use for the constructed client. |
@@ -26,6 +26,7 @@ Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 | start_date           | True     | None    | The earliest record date to sync |
 | log_group_name       | True     | None    | The log group on which to perform the query. |
 | query                | True     | None    | The query string to use. For more information, see [CloudWatch Logs Insights Query Syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html). |
+| batch_increment_mins | False    |    1440 | The size of the time window to query by, default 1440 mins (i.e. 1 day). The tap will raise an exception if the result set is greater than the max limit of 10,000 records because it can't be sure that all data is extracted. If this happens you'll need to reduce this batch_increment_mins setting to retrieve a smaller record set per query. |
 | stream_maps          | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
 | stream_map_config    | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled   | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
