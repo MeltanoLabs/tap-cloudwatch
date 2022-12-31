@@ -79,16 +79,17 @@ class CloudwatchAPI:
                 query_start = int(start_time + (increment_mins * 60 * count))
             query_end = int(start_time + (increment_mins * 60 * (count + 1)))
             self.logger.info(
-                f"""
-                Retrieving batch from:
-                 `{datetime.fromtimestamp(query_start).isoformat()}` -
-                 `{datetime.fromtimestamp(query_end).isoformat()}`
-                """
+                (
+                    "Retrieving batch from:"
+                    f" `{datetime.fromtimestamp(query_start).isoformat()}` -"
+                    f" `{datetime.fromtimestamp(query_end).isoformat()}`"
+                )
             )
             start_query_response = self.client.start_query(
                 logGroupName=log_group,
                 startTime=query_start,
                 endTime=query_end,
+                # TODO: add sort to end of query
                 queryString=query,
                 limit=limit,
             )
@@ -101,10 +102,11 @@ class CloudwatchAPI:
             if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
                 raise Exception(f"Failed: {response}")
             result_size = response.get("statistics", {}).get("recordsMatched")
-            if result_size == limit:
-                raise Exception(
-                    f"The result size is the same as limit ({limit}), theres a risk of missing data. \
-                    Try reducing the increment config and re-run."
-                )
+            if result_size > limit:
+                # TODO: get max timestamp and use as start date to the next batch
+                raise Exception((
+                    f"The result size {result_size} is greater than the limit ({limit})."
+                    "Theres a risk of missing data. Try reducing the increment config and re-run."
+                ))
             yield response
             count += 1

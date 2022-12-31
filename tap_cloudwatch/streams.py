@@ -11,7 +11,7 @@ class LogStream(CloudWatchStream):
     """Log stream."""
 
     name = "log"
-    primary_keys: List[str] = []
+    primary_keys: List[str] = ["ptr"]
     replication_key = "timestamp"
 
     @property
@@ -21,6 +21,13 @@ class LogStream(CloudWatchStream):
 
         # TODO: handle parse and unmask syntax
         # | parse @message "[*] *" as loggingType, loggingMessage
+        properties.append(
+            th.Property(
+                "ptr",
+                th.StringType(),
+                description="The identifier for the log record."
+            )
+        )
         for prop in self.config.get("query").split("|")[0].split(","):
             prop = prop.strip()
             if prop.startswith("fields "):
