@@ -3,6 +3,7 @@
 import os
 import time
 from datetime import datetime, timezone
+from tap_cloudwatch.exception import InvalidQueryException
 
 import boto3
 from math import ceil
@@ -76,12 +77,21 @@ class CloudwatchAPI:
             batch_windows.append((query_start, query_end))
         return batch_windows
 
+    def validate_query(self, query):
+        if "|sort" in query.replace(" ", ""):
+            raise InvalidQueryException("sort not allowed")
+        if "|limit" in query.replace(" ", ""):
+            raise InvalidQueryException("limit not allowed")
+        if "stats" in query:
+            raise InvalidQueryException("stats not allowed")
+
     def get_records_iterator(self, bookmark, log_group, query, batch_increment_s):
         """Retrieve records from Cloudwatch."""
         end_time = datetime.now(timezone.utc).timestamp()
         start_time = bookmark.timestamp()
+        self.validate_query(query)
         batch_windows = self.split_batch_into_windows(start_time, end_time, batch_increment_s)
-        
+
         for window in batch_windows:
             yield self.handle_batch_window(window[0], window[1], log_group, query)
 
@@ -94,7 +104,7 @@ class CloudwatchAPI:
             )
         )
         limit = 10000
-        # query += " | sort @timestamp asc"
+        query += " | sort @timestamp asc"
         start_query_response = self.client.start_query(
             logGroupName=log_group,
             startTime=query_start,

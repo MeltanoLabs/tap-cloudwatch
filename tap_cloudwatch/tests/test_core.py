@@ -34,7 +34,7 @@ def test_standard_tap_tests(patch_client):
             "endTime": 1672358400,
             "limit": 10000,
             "logGroupName": "my_log_group_name",
-            "queryString": "fields @timestamp, @message",
+            "queryString": "fields @timestamp, @message | sort @timestamp asc",
             "startTime": 1672272000,
         },
     )

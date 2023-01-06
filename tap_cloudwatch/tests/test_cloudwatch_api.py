@@ -1,13 +1,17 @@
 """Tests cloudwatch api module."""
 
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
+from tap_cloudwatch.exception import InvalidQueryException
 import pytest
 from unittest.mock import patch
+from datetime import datetime, timezone
 
 import boto3
 from botocore.stub import Stubber
 from freezegun import freeze_time
 import logging
+from contextlib import nullcontext as does_not_raise
+
 
 @pytest.mark.parametrize(
     'start,end,batch,expected',
@@ -22,6 +26,23 @@ def test_split_batch_into_windows(start, end, batch, expected):
     batches = api.split_batch_into_windows(start, end, batch)
     assert batches == expected
 
+
+
+@pytest.mark.parametrize(
+    'query,expectation',
+    [
+        ["fields @timestamp, @message | sort @timestamp desc", pytest.raises(InvalidQueryException)],
+        ["fields @timestamp, @message | limit 5", pytest.raises(InvalidQueryException)],
+        ["stats count(*) by duration as time", pytest.raises(InvalidQueryException)],
+        ["fields @timestamp, @message", does_not_raise()],
+    ],
+)
+def test_validate_query(query, expectation):
+    """Run standard tap tests from the SDK."""
+    api = CloudwatchAPI(None)
+    with expectation:
+        api.validate_query(query)
+
 @freeze_time("2022-12-30")
 def test_handle_batch_window():
     """Run standard tap tests from the SDK."""
@@ -33,7 +54,7 @@ def test_handle_batch_window():
     query_start = 1672272000
     query_end = 1672275600
     log_group = "my_log_group_name"
-    query = "fields @timestamp, @message"
+    in_query = "fields @timestamp, @message"
 
     response = {
         "status": "abc",
@@ -53,7 +74,7 @@ def test_handle_batch_window():
             "endTime": query_end,
             "limit": 10000,
             "logGroupName": log_group,
-            "queryString": query,
+            "queryString": in_query + " | sort @timestamp asc",
             "startTime": query_start,
         },
     )
@@ -64,5 +85,5 @@ def test_handle_batch_window():
     )
     stubber.activate()
 
-    output = api.handle_batch_window(query_start, query_end, log_group, query)
+    output = api.handle_batch_window(query_start, query_end, log_group, in_query)
     assert response == output
