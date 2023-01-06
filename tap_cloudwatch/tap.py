@@ -80,16 +80,21 @@ class TapCloudWatch(Tap):
             ),
         ),
         th.Property(
-            "batch_increment_mins",
+            "batch_increment_s",
             th.IntegerType,
-            default=1440,  # type: ignore
+            default=3600,  # type: ignore
             description=(
-                "The size of the time window to query by, default 1440 mins"
-                " (i.e. 1 day). The tap will raise an exception if the result set is"
-                " greater than the max limit of 10,000 records because it can't be sure"
-                " that all data is extracted. If this happens you'll need to reduce"
-                " this batch_increment_mins setting to retrieve a smaller record set"
-                " per query."
+                "The size of the time window to query by, default 3,600 seconds"
+                " (i.e. 1 hour). If the result set for a batch is greater than "
+                "the max limit of 10,000 records then the tap will query the "
+                "same window again where >= the most recent record received. This "
+                "means that the same data is potentially being scanned >1 times"
+                " but < 2 times, depending on the amount the results set went over"
+                " the 10k max. For example a batch window with 15k records would "
+                "scan the 15k once, receiving 10k results, then scan ~5k again to "
+                "get the rest. The net result is the same data was scanned ~1.5 times"
+                " for that batch. To avoid this you should set the batch window to "
+                "avoid exceeding the 10k limit."
             ),
         ),
     ).to_dict()

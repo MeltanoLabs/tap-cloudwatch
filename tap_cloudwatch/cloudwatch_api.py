@@ -2,10 +2,10 @@
 
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import boto3
-
+from math import ceil
 
 class CloudwatchAPI:
     """Cloudwatch class for interacting with the API."""
@@ -61,52 +61,60 @@ class CloudwatchAPI:
     def _request_more_records():
         return True
 
-    def get_records_iterator(self, bookmark, log_group, query, increment_mins):
-        """Retrieve records from Cloudwatch."""
-        limit = 10000
-        end_time = datetime.utcnow().timestamp()
-        start_time = bookmark.timestamp()
+    def split_batch_into_windows(self, start_time, end_time, batch_increment_s):
         diff_s = end_time - start_time
-        diff_mins = diff_s / 60.0
-        batches = diff_mins / increment_mins
-        count = 0
-        while count < batches:
-            if count != 0:
+        total_batches = ceil(diff_s / batch_increment_s)
+        batch_windows = []
+        for batch_num in range(total_batches):
+            if batch_num != 0:
                 # Inclusive start and end date, so on second iteration
                 # we can skip one second.
-                query_start = int(start_time + (increment_mins * 60 * count) + 1)
+                query_start = int(start_time + (batch_increment_s * batch_num) + 1)
             else:
-                query_start = int(start_time + (increment_mins * 60 * count))
-            query_end = int(start_time + (increment_mins * 60 * (count + 1)))
-            self.logger.info(
-                (
-                    "Retrieving batch from:"
-                    f" `{datetime.fromtimestamp(query_start).isoformat()}` -"
-                    f" `{datetime.fromtimestamp(query_end).isoformat()}`"
-                )
-            )
-            start_query_response = self.client.start_query(
-                logGroupName=log_group,
-                startTime=query_start,
-                endTime=query_end,
-                # TODO: add sort to end of query
-                queryString=query,
-                limit=limit,
-            )
+                query_start = int(start_time + (batch_increment_s * batch_num))
+            query_end = int(start_time + (batch_increment_s * (batch_num + 1)))
+            batch_windows.append((query_start, query_end))
+        return batch_windows
 
-            query_id = start_query_response["queryId"]
-            response = None
-            while response is None or response["status"] == "Running":
-                time.sleep(1)
-                response = self.client.get_query_results(queryId=query_id)
-            if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
-                raise Exception(f"Failed: {response}")
-            result_size = response.get("statistics", {}).get("recordsMatched")
-            if result_size > limit:
-                # TODO: get max timestamp and use as start date to the next batch
-                raise Exception((
-                    f"The result size {result_size} is greater than the limit ({limit})."
-                    "Theres a risk of missing data. Try reducing the increment config and re-run."
-                ))
-            yield response
-            count += 1
+    def get_records_iterator(self, bookmark, log_group, query, batch_increment_s):
+        """Retrieve records from Cloudwatch."""
+        end_time = datetime.now(timezone.utc).timestamp()
+        start_time = bookmark.timestamp()
+        batch_windows = self.split_batch_into_windows(start_time, end_time, batch_increment_s)
+        
+        for window in batch_windows:
+            yield self.handle_batch_window(window[0], window[1], log_group, query)
+
+    def handle_batch_window(self, query_start, query_end, log_group, query):
+        self.logger.info(
+            (
+                "Retrieving batch from:"
+                f" `{datetime.utcfromtimestamp(query_start).isoformat()} UTC` -"
+                f" `{datetime.utcfromtimestamp(query_end).isoformat()} UTC`"
+            )
+        )
+        limit = 10000
+        # query += " | sort @timestamp asc"
+        start_query_response = self.client.start_query(
+            logGroupName=log_group,
+            startTime=query_start,
+            endTime=query_end,
+            queryString=query,
+            limit=limit,
+        )
+
+        query_id = start_query_response["queryId"]
+        response = None
+        while response is None or response["status"] == "Running":
+            time.sleep(1)
+            response = self.client.get_query_results(queryId=query_id)
+        if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
+            raise Exception(f"Failed: {response}")
+        result_size = response.get("statistics", {}).get("recordsMatched")
+        if result_size > limit:
+            # TODO: get max timestamp and use as start date to the next batch
+            raise Exception((
+                f"The result size {result_size} is greater than the limit ({limit})."
+                "Theres a risk of missing data. Try reducing the increment config and re-run."
+            ))
+        return response
