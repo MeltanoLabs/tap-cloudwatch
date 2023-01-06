@@ -84,6 +84,8 @@ class CloudwatchAPI:
             raise InvalidQueryException("limit not allowed")
         if "stats" in query:
             raise InvalidQueryException("stats not allowed")
+        if "@timestamp" not in query.split("|")[0]:
+            raise InvalidQueryException("@timestamp field is used as the replication key so it must be selected")
 
     def get_records_iterator(self, bookmark, log_group, query, batch_increment_s):
         """Retrieve records from Cloudwatch."""
@@ -95,6 +97,10 @@ class CloudwatchAPI:
         for window in batch_windows:
             yield self.handle_batch_window(window[0], window[1], log_group, query)
 
+    def alter_query(self, query):
+        query += " | sort @timestamp asc"
+        return query
+
     def handle_batch_window(self, query_start, query_end, log_group, query):
         self.logger.info(
             (
@@ -104,7 +110,7 @@ class CloudwatchAPI:
             )
         )
         limit = 10000
-        query += " | sort @timestamp asc"
+        query = self.alter_query(query)
         start_query_response = self.client.start_query(
             logGroupName=log_group,
             startTime=query_start,

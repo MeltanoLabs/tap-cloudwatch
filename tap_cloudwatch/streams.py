@@ -28,15 +28,21 @@ class LogStream(CloudWatchStream):
                 description="The identifier for the log record."
             )
         )
+        properties.append(
+            th.Property(
+                "timestamp",
+                th.DateTimeType(),
+                description="The timestamp of the log."
+            )
+        )
         for prop in self.config.get("query").split("|")[0].split(","):
             prop = prop.strip()
             if prop.startswith("fields "):
                 prop = prop[7:].strip()
             if prop.startswith("@"):
                 prop = prop[1:]
-            if prop == "timestamp":
-                properties.append(th.Property(prop, th.DateTimeType()))
-            else:
-                # Assume string type for all fields
-                properties.append(th.Property(prop, th.StringType()))
+            if prop in ("timestamp", "ptr"):
+                continue
+            # Assume string type for all fields
+            properties.append(th.Property(prop, th.StringType()))
         return th.PropertiesList(*properties).to_dict()

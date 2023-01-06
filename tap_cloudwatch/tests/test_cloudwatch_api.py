@@ -34,6 +34,7 @@ def test_split_batch_into_windows(start, end, batch, expected):
         ["fields @timestamp, @message | sort @timestamp desc", pytest.raises(InvalidQueryException)],
         ["fields @timestamp, @message | limit 5", pytest.raises(InvalidQueryException)],
         ["stats count(*) by duration as time", pytest.raises(InvalidQueryException)],
+        ["fields @message", pytest.raises(InvalidQueryException)],
         ["fields @timestamp, @message", does_not_raise()],
     ],
 )
