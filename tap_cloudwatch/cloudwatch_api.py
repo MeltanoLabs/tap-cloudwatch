@@ -3,6 +3,8 @@
 import os
 import time
 from datetime import datetime, timezone
+import pytz
+
 from tap_cloudwatch.exception import InvalidQueryException
 
 import boto3
@@ -97,11 +99,21 @@ class CloudwatchAPI:
         for window in batch_windows:
             yield self.handle_batch_window(window[0], window[1], log_group, query)
 
+    def handle_limit_exceeded(self, response, log_group, query_start, query_end, query):
+        results = response.get("results")
+        last_record = results[-1]
+
+        latest_ts_str = [i["value"] for i in last_record if i["field"] == "@timestamp"][0]
+        # Include latest ts in query, this could cause duplicates but
+        # without it we might miss ties
+        query_start = int(datetime.fromisoformat(latest_ts_str).replace(tzinfo=pytz.UTC).timestamp())
+        self.handle_batch_window(query_start, query_end, log_group, query, prev_start=query_start)
+
     def alter_query(self, query):
         query += " | sort @timestamp asc"
         return query
 
-    def handle_batch_window(self, query_start, query_end, log_group, query):
+    def handle_batch_window(self, query_start, query_end, log_group, query, prev_start=None):
         self.logger.info(
             (
                 "Retrieving batch from:"
@@ -128,9 +140,10 @@ class CloudwatchAPI:
             raise Exception(f"Failed: {response}")
         result_size = response.get("statistics", {}).get("recordsMatched")
         if result_size > limit:
-            # TODO: get max timestamp and use as start date to the next batch
-            raise Exception((
-                f"The result size {result_size} is greater than the limit ({limit})."
-                "Theres a risk of missing data. Try reducing the increment config and re-run."
-            ))
+            if prev_start == query_start:
+                raise Exception("Stuck in a loop, smaller batch still exceeds limit. Reduce batch window.")
+            self.logger.info(
+                f"Result set size '{int(result_size)}' exceeded limit '{limit}'. Re-running sub-batch..."
+            )
+            self.handle_limit_exceeded(response, log_group, query_start, query_end, query)
         return response
