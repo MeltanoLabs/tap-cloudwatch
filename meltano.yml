@@ -1,13 +1,13 @@
 version: 1
 send_anonymous_usage_stats: true
-project_id: "tap-cloudwatch"
+project_id: tap-cloudwatch
 default_environment: test
 environments:
 - name: test
 plugins:
   extractors:
-  - name: "tap-cloudwatch"
-    namespace: "tap_cloudwatch"
+  - name: tap-cloudwatch
+    namespace: tap_cloudwatch
     pip_url: -e .
     capabilities:
     - state
@@ -18,7 +18,6 @@ plugins:
     config:
       start_date: '2010-01-01T00:00:00Z'
     settings:
-    # TODO: To configure using Meltano, declare settings and their types here:
     - name: aws_access_key_id
       kind: password
     - name: aws_secret_access_key
@@ -32,6 +31,8 @@ plugins:
     - name: query
     - name: start_date
       kind: date_iso8601
+    - name: batch_increment_s
+      kind: integer
     settings_group_validation:
     - - aws_access_key_id
         aws_secret_access_key
