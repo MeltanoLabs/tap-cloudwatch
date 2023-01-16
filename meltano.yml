@@ -16,7 +16,7 @@ plugins:
     - about
     - stream-maps
     config:
-      start_date: '2010-01-01T00:00:00Z'
+      start_date: '2023-01-01T00:00:00Z'
     settings:
     - name: aws_access_key_id
       kind: password
