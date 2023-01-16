@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import pytz
 
 from tap_cloudwatch.exception import InvalidQueryException
-
+from collections import deque
 import boto3
 from math import ceil
 
@@ -18,6 +18,7 @@ class CloudwatchAPI:
         self._client = None
         self.logger = logger
         self.limit = 10000
+        self.max_concurrent_queries = 20
 
     @property
     def client(self):
@@ -97,10 +98,19 @@ class CloudwatchAPI:
         self.validate_query(query)
         batch_windows = self.split_batch_into_windows(start_time, end_time, batch_increment_s)
 
+        queue = deque()
         for window in batch_windows:
-            # TODO: start 20, keep track of order and query_ids, get query results one at a time
-            query_id = self.start_query(window[0], window[1], log_group, query)
-            results = self.get_results(log_group, window[0], window[1], query, query_id)
+            if len(queue) < (self.max_concurrent_queries - 1):
+                queue.append((self.start_query(window[0], window[1], log_group, query), window[0], window[1]))
+            else:
+                query_id, start, end = queue.popleft()
+                queue.append((self.start_query(window[0], window[1], log_group, query), window[0], window[1]))
+                results = self.get_results(log_group, start, end, query, query_id)
+                yield results
+
+        while len(queue) > 0:
+            query_id, start, end = queue.popleft()
+            results = self.get_results(log_group, start, end, query, query_id)
             yield results
 
     def handle_limit_exceeded(self, response, log_group, query_start, query_end, query):
@@ -121,7 +131,7 @@ class CloudwatchAPI:
     def start_query(self, query_start, query_end, log_group, query, prev_start=None):
         self.logger.info(
             (
-                "Retrieving batch from:"
+                "Submitting query for batch from:"
                 f" `{datetime.utcfromtimestamp(query_start).isoformat()} UTC` -"
                 f" `{datetime.utcfromtimestamp(query_end).isoformat()} UTC`"
             )
@@ -137,14 +147,24 @@ class CloudwatchAPI:
         return start_query_response["queryId"]
 
     def get_results(self, log_group, query_start, query_end, query, query_id, prev_start=None):
-        response = None
+        self.logger.info(
+            (
+                "Retrieving results for batch from:"
+                f" `{datetime.utcfromtimestamp(query_start).isoformat()} UTC` -"
+                f" `{datetime.utcfromtimestamp(query_end).isoformat()} UTC`"
+            )
+        )
+        response = self.client.get_query_results(queryId=query_id)
         while response is None or response["status"] == "Running":
-            time.sleep(1)
+            time.sleep(0.5)
             response = self.client.get_query_results(queryId=query_id)
         if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
             raise Exception(f"Failed: {response}")
         result_size = response.get("statistics", {}).get("recordsMatched")
         results = response['results']
+        self.logger.info(
+            f"Result set size '{int(result_size)}' received."
+        )
         if result_size > self.limit:
             if prev_start == query_start:
                 raise Exception("Stuck in a loop, smaller batch still exceeds limit. Reduce batch window.")
