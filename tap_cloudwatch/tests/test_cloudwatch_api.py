@@ -86,5 +86,7 @@ def test_handle_batch_window():
     )
     stubber.activate()
 
-    output = api.handle_batch_window(query_start, query_end, log_group, in_query)
-    assert response == output
+    query_id = api.start_query(query_start, query_end, log_group, in_query)
+    output = api.get_results(log_group, query_start, query_end, in_query, query_id)
+        
+    assert response["results"] == output
