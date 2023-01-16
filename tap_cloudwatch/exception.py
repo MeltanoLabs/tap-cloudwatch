@@ -1,3 +1,7 @@
+"""Custom exceptions."""
+
+
 class InvalidQueryException(Exception):
-    "Raised when the input value is less than 18"
+    """Raised when the input query is invalid."""
+
     pass

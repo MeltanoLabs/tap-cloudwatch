@@ -29,5 +29,5 @@ class CloudWatchStream(Stream):
             self.config.get("batch_increment_s"),
         )
         for batch in cloudwatch_iter:
-            for record in batch.get("results"):
+            for record in batch:
                 yield {i["field"][1:]: i["value"] for i in record}

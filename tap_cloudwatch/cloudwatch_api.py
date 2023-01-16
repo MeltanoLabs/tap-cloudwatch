@@ -2,13 +2,15 @@
 
 import os
 import time
+from collections import deque
 from datetime import datetime, timezone
+from math import ceil
+
+import boto3
 import pytz
 
 from tap_cloudwatch.exception import InvalidQueryException
 
-import boto3
-from math import ceil
 
 class CloudwatchAPI:
     """Cloudwatch class for interacting with the API."""
@@ -17,6 +19,8 @@ class CloudwatchAPI:
         """Initialize CloudwatchAPI."""
         self._client = None
         self.logger = logger
+        self.limit = 10000
+        self.max_concurrent_queries = 20
 
     @property
     def client(self):
@@ -64,7 +68,7 @@ class CloudwatchAPI:
     def _request_more_records():
         return True
 
-    def split_batch_into_windows(self, start_time, end_time, batch_increment_s):
+    def _split_batch_into_windows(self, start_time, end_time, batch_increment_s):
         diff_s = end_time - start_time
         total_batches = ceil(diff_s / batch_increment_s)
         batch_windows = []
@@ -79,7 +83,7 @@ class CloudwatchAPI:
             batch_windows.append((query_start, query_end))
         return batch_windows
 
-    def validate_query(self, query):
+    def _validate_query(self, query):
         if "|sort" in query.replace(" ", ""):
             raise InvalidQueryException("sort not allowed")
         if "|limit" in query.replace(" ", ""):
@@ -87,63 +91,117 @@ class CloudwatchAPI:
         if "stats" in query:
             raise InvalidQueryException("stats not allowed")
         if "@timestamp" not in query.split("|")[0]:
-            raise InvalidQueryException("@timestamp field is used as the replication key so it must be selected")
+            raise InvalidQueryException(
+                "@timestamp field is used as the replication key so it must be selected"
+            )
 
     def get_records_iterator(self, bookmark, log_group, query, batch_increment_s):
         """Retrieve records from Cloudwatch."""
         end_time = datetime.now(timezone.utc).timestamp()
         start_time = bookmark.timestamp()
-        self.validate_query(query)
-        batch_windows = self.split_batch_into_windows(start_time, end_time, batch_increment_s)
+        self._validate_query(query)
+        batch_windows = self._split_batch_into_windows(
+            start_time, end_time, batch_increment_s
+        )
 
+        queue = deque()
         for window in batch_windows:
-            yield self.handle_batch_window(window[0], window[1], log_group, query)
+            if len(queue) < (self.max_concurrent_queries - 1):
+                queue.append(
+                    (
+                        self._start_query(window[0], window[1], log_group, query),
+                        window[0],
+                        window[1],
+                    )
+                )
+            else:
+                query_id, start, end = queue.popleft()
+                queue.append(
+                    (
+                        self._start_query(window[0], window[1], log_group, query),
+                        window[0],
+                        window[1],
+                    )
+                )
+                results = self._get_results(log_group, start, end, query, query_id)
+                yield results
 
-    def handle_limit_exceeded(self, response, log_group, query_start, query_end, query):
+        while len(queue) > 0:
+            query_id, start, end = queue.popleft()
+            results = self._get_results(log_group, start, end, query, query_id)
+            yield results
+
+    def _handle_limit_exceeded(
+        self, response, log_group, query_start, query_end, query
+    ):
         results = response.get("results")
         last_record = results[-1]
 
-        latest_ts_str = [i["value"] for i in last_record if i["field"] == "@timestamp"][0]
+        latest_ts_str = [i["value"] for i in last_record if i["field"] == "@timestamp"][
+            0
+        ]
         # Include latest ts in query, this could cause duplicates but
         # without it we might miss ties
-        query_start = int(datetime.fromisoformat(latest_ts_str).replace(tzinfo=pytz.UTC).timestamp())
-        self.handle_batch_window(query_start, query_end, log_group, query, prev_start=query_start)
+        new_query_start = int(
+            datetime.fromisoformat(latest_ts_str).replace(tzinfo=pytz.UTC).timestamp()
+        )
+        new_query_id = self._start_query(new_query_start, query_end, log_group, query)
+        return self._get_results(
+            log_group, new_query_start, query_end, query, new_query_id
+        )
 
-    def alter_query(self, query):
+    def _alter_query(self, query):
         query += " | sort @timestamp asc"
         return query
 
-    def handle_batch_window(self, query_start, query_end, log_group, query, prev_start=None):
+    def _start_query(self, query_start, query_end, log_group, query, prev_start=None):
         self.logger.info(
             (
-                "Retrieving batch from:"
+                "Submitting query for batch from:"
                 f" `{datetime.utcfromtimestamp(query_start).isoformat()} UTC` -"
                 f" `{datetime.utcfromtimestamp(query_end).isoformat()} UTC`"
             )
         )
-        limit = 10000
-        query = self.alter_query(query)
+        query = self._alter_query(query)
         start_query_response = self.client.start_query(
             logGroupName=log_group,
             startTime=query_start,
             endTime=query_end,
             queryString=query,
-            limit=limit,
+            limit=self.limit,
         )
+        return start_query_response["queryId"]
 
-        query_id = start_query_response["queryId"]
-        response = None
+    def _get_results(
+        self, log_group, query_start, query_end, query, query_id, prev_start=None
+    ):
+        self.logger.info(
+            (
+                "Retrieving results for batch from:"
+                f" `{datetime.utcfromtimestamp(query_start).isoformat()} UTC` -"
+                f" `{datetime.utcfromtimestamp(query_end).isoformat()} UTC`"
+            )
+        )
+        response = self.client.get_query_results(queryId=query_id)
         while response is None or response["status"] == "Running":
-            time.sleep(1)
+            time.sleep(0.5)
             response = self.client.get_query_results(queryId=query_id)
         if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
             raise Exception(f"Failed: {response}")
         result_size = response.get("statistics", {}).get("recordsMatched")
-        if result_size > limit:
+        results = response["results"]
+        self.logger.info(f"Result set size '{int(result_size)}' received.")
+        if result_size > self.limit:
             if prev_start == query_start:
-                raise Exception("Stuck in a loop, smaller batch still exceeds limit. Reduce batch window.")
+                raise Exception(
+                    "Stuck in a loop, smaller batch still exceeds limit."
+                    "Reduce batch window."
+                )
             self.logger.info(
-                f"Result set size '{int(result_size)}' exceeded limit '{limit}'. Re-running sub-batch..."
+                f"Result set size '{int(result_size)}' exceeded limit "
+                f"'{self.limit}'. Re-running sub-batch..."
             )
-            self.handle_limit_exceeded(response, log_group, query_start, query_end, query)
-        return response
+            results += self._handle_limit_exceeded(
+                response, log_group, query_start, query_end, query
+            )
+        return results
