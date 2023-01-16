@@ -15,7 +15,7 @@ SAMPLE_CONFIG = {
     "query": "fields @timestamp, @message",
     "aws_region_name": "us-east-1",
     "start_date": "2022-12-29",
-    "batch_increment_s": 86400
+    "batch_increment_s": 86400,
 }
 
 client = boto3.client("logs", region_name="us-east-1")
@@ -49,7 +49,7 @@ def test_standard_tap_tests(patch_client):
                 ]
             ],
             "ResponseMetadata": {"HTTPStatusCode": 200},
-            "statistics": {"recordsMatched": 0}
+            "statistics": {"recordsMatched": 0},
         },
         {"queryId": "123"},
     )

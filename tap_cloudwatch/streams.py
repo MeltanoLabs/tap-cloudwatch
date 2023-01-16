@@ -23,16 +23,12 @@ class LogStream(CloudWatchStream):
         # | parse @message "[*] *" as loggingType, loggingMessage
         properties.append(
             th.Property(
-                "ptr",
-                th.StringType(),
-                description="The identifier for the log record."
+                "ptr", th.StringType(), description="The identifier for the log record."
             )
         )
         properties.append(
             th.Property(
-                "timestamp",
-                th.DateTimeType(),
-                description="The timestamp of the log."
+                "timestamp", th.DateTimeType(), description="The timestamp of the log."
             )
         )
         for prop in self.config.get("query").split("|")[0].split(","):
