@@ -10,6 +10,18 @@ from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
 class CloudWatchStream(Stream):
     """Stream class for CloudWatch streams."""
 
+    @property
+    def is_sorted(self) -> bool:
+        """Expect stream to be sorted.
+
+        When `True`, incremental streams will attempt to resume if unexpectedly
+        interrupted.
+
+        Returns:
+            `True` if stream is sorted. Defaults to `False`.
+        """
+        return True
+
     def get_records(self, context: Optional[dict]) -> Iterable[dict]:
         """Return a generator of record-type dictionary objects.
 
