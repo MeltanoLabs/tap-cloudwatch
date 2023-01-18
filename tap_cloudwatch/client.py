@@ -17,8 +17,10 @@ class CloudWatchStream(Stream):
         When `True`, incremental streams will attempt to resume if unexpectedly
         interrupted.
 
-        Returns:
+        Returns
+        -------
             `True` if stream is sorted. Defaults to `False`.
+
         """
         return True
 
