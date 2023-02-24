@@ -75,8 +75,10 @@ Create tests within the `tap_cloudwatch/tests` subfolder and
   then run:
 
 ```bash
-poetry run pytest
+poetry run tox -e pytest
 ```
+
+Coverage reports are generated at `tap_cloudwatch/tests/codecoverage/`.
 
 You can also test the `tap-cloudwatch` CLI interface directly using `poetry run`:
 
