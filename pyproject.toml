@@ -21,7 +21,7 @@ s3 = ["fs-s3fs"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.2.5"
-tox = "^3.24.4"
+tox = "^3.28.0"
 flake8 = "^3.9.2"
 pydocstyle = "^6.1.1"
 mypy = "^0.910"
