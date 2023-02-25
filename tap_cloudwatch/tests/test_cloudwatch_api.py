@@ -18,10 +18,20 @@ from tap_cloudwatch.exception import InvalidQueryException
             3600,
             [(1672272000, 1672275600), (1672275601, 1672279200)],
         ],
+        [
+            1672272000,
+            1672282800,
+            3600,
+            [
+                (1672272000, 1672275600),
+                (1672275601, 1672279200),
+                (1672279201, 1672282800),
+            ],
+        ],
     ],
 )
 def test_split_batch_into_windows(start, end, batch, expected):
-    """Run standard tap tests from the SDK."""
+    """Test _split_batch_into_windows."""
     api = CloudwatchAPI(None)
     batches = api._split_batch_into_windows(start, end, batch)
     assert batches == expected
