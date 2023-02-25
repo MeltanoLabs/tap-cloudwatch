@@ -58,6 +58,7 @@ def test_subquery():
 
     assert response["results"] == output
 
+
 @freeze_time("2022-12-30")
 def test_subquery_incomplete():
     """Run subquery test."""
@@ -95,8 +96,8 @@ def test_subquery_incomplete():
         {
             "status": "Scheduled",
             "ResponseMetadata": {"HTTPStatusCode": 200},
-            "statistics": {'recordsMatched': 0.0},
-            "results": []
+            "statistics": {"recordsMatched": 0.0},
+            "results": [],
         },
         {"queryId": "123"},
     )
@@ -112,6 +113,7 @@ def test_subquery_incomplete():
     output = query_obj.get_results()
 
     assert response["results"] == output
+
 
 @patch.object(Subquery, "_handle_limit_exceeded", return_value=["foo"])
 def test_subquery_limit_exceeded(patch_limit):
@@ -150,6 +152,7 @@ def test_subquery_limit_exceeded(patch_limit):
     results += ["foo"]
     assert results == output
 
+
 @patch.object(Subquery, "execute")
 @patch.object(Subquery, "get_results")
 def test_handle_limit_exceeded(patch_result, execute):
@@ -164,7 +167,7 @@ def test_handle_limit_exceeded(patch_result, execute):
             [
                 {"field": "@timestamp", "value": "2023-01-01"},
                 {"field": "@message", "value": "def"},
-            ]
+            ],
         ],
         "ResponseMetadata": {"HTTPStatusCode": 200},
         "statistics": {"recordsMatched": 10001},
@@ -176,5 +179,5 @@ def test_handle_limit_exceeded(patch_result, execute):
 
     patch_result.assert_called()
     execute.assert_called()
-    
+
     assert query_obj.start_ts == 1672531200
