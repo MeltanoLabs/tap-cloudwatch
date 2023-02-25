@@ -41,7 +41,7 @@ def test_standard_tap_tests(patch_client):
     stubber.add_response(
         "get_query_results",
         {
-            "status": "abc",
+            "status": "Complete",
             "results": [
                 [
                     {"field": "@timestamp", "value": "2022-01-01"},

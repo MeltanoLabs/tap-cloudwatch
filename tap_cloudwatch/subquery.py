@@ -48,11 +48,25 @@ class Subquery:
                 f" `{datetime.utcfromtimestamp(self.end_ts).isoformat()} UTC`"
             )
         )
-        response = self.client.get_query_results(queryId=self.query_id)
-        while response is None or response["status"] == "Running":
-            time.sleep(0.5)
+        response = None
+        retry = True
+        while response is None or response["status"] != "Complete":
             response = self.client.get_query_results(queryId=self.query_id)
-        if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
+            status = response["status"]
+            if status in ("Failed", "Cancelled", "Timeout"):
+                # Retry the query
+                if retry:
+                    self.logger.info(f"Status: {status}. Retrying...")
+                    self.execute()
+                    retry = False
+                else:
+                    break
+            time.sleep(0.5)
+
+        if (
+            response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200
+            or response["status"] != "Complete"
+        ):
             raise Exception(f"Failed: {response}")
         result_size = response.get("statistics", {}).get("recordsMatched")
         results = response["results"]

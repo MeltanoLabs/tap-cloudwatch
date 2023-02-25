@@ -6,6 +6,8 @@ from freezegun import freeze_time
 from unittest.mock import patch
 
 from tap_cloudwatch.subquery import Subquery
+import pytest
+from contextlib import nullcontext as does_not_raise
 
 
 @freeze_time("2022-12-30")
@@ -59,8 +61,19 @@ def test_subquery():
     assert response["results"] == output
 
 
+@pytest.mark.parametrize(
+    "first_status,second_status,expectation",
+    [
+        ["Failed", "Complete", does_not_raise()],
+        ["Cancelled", "Complete", does_not_raise()],
+        ["Timeout", "Complete", does_not_raise()],
+        ["Failed", "Failed", pytest.raises(Exception)],
+        ["Cancelled", "Cancelled", pytest.raises(Exception)],
+        ["Timeout", "Timeout", pytest.raises(Exception)],
+    ],
+)
 @freeze_time("2022-12-30")
-def test_subquery_incomplete():
+def test_subquery_retry(first_status, second_status, expectation):
     """Run subquery test."""
     client = boto3.client("logs", region_name="us-east-1")
     stubber = Stubber(client)
@@ -70,7 +83,7 @@ def test_subquery_incomplete():
     in_query = "fields @timestamp, @message"
 
     response = {
-        "status": "Failed",
+        "status": second_status,
         "results": [
             [
                 {"field": "@timestamp", "value": "2022-01-01"},
@@ -80,6 +93,16 @@ def test_subquery_incomplete():
         "ResponseMetadata": {"HTTPStatusCode": 200},
         "statistics": {"recordsMatched": 10000},
     }
+    stubber.add_response(
+        "get_query_results",
+        {
+            "status": first_status,
+            "ResponseMetadata": {"HTTPStatusCode": 200},
+            "statistics": {"recordsMatched": 0.0},
+            "results": [],
+        },
+        {"queryId": "123"},
+    )
     stubber.add_response(
         "start_query",
         {"queryId": "123"},
@@ -93,26 +116,16 @@ def test_subquery_incomplete():
     )
     stubber.add_response(
         "get_query_results",
-        {
-            "status": "Scheduled",
-            "ResponseMetadata": {"HTTPStatusCode": 200},
-            "statistics": {"recordsMatched": 0.0},
-            "results": [],
-        },
-        {"queryId": "123"},
-    )
-    stubber.add_response(
-        "get_query_results",
         response,
         {"queryId": "123"},
     )
     stubber.activate()
 
     query_obj = Subquery(client, query_start, query_end, log_group, in_query)
-    query_obj.execute()
-    output = query_obj.get_results()
-
-    assert response["results"] == output
+    query_obj.query_id = "123"
+    with expectation:
+        output = query_obj.get_results()
+        assert response["results"] == output
 
 
 @patch.object(Subquery, "_handle_limit_exceeded", return_value=["foo"])
