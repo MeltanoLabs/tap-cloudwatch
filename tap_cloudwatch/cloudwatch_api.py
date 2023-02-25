@@ -1,15 +1,15 @@
 """Class for interacting with Cloudwatch API."""
 
 import os
-import time
 from collections import deque
 from datetime import datetime, timezone
 from math import ceil
+from typing import Deque
 
 import boto3
-import pytz
 
 from tap_cloudwatch.exception import InvalidQueryException
+from tap_cloudwatch.subquery import Subquery
 
 
 class CloudwatchAPI:
@@ -19,7 +19,6 @@ class CloudwatchAPI:
         """Initialize CloudwatchAPI."""
         self._client = None
         self.logger = logger
-        self.limit = 10000
         self.max_concurrent_queries = 20
 
     @property
@@ -64,10 +63,6 @@ class CloudwatchAPI:
             logs = aws_session.client("logs")
         return logs
 
-    @staticmethod
-    def _request_more_records():
-        return True
-
     def _split_batch_into_windows(self, start_time, end_time, batch_increment_s):
         diff_s = end_time - start_time
         total_batches = ceil(diff_s / batch_increment_s)
@@ -95,6 +90,33 @@ class CloudwatchAPI:
                 "@timestamp field is used as the replication key so it must be selected"
             )
 
+    def _queue_is_full(self, queue):
+        return len(queue) >= self.max_concurrent_queries
+
+    @staticmethod
+    def _get_completed_query(queue):
+        return queue.popleft()
+
+    def _iterate_batches(self, batch_windows, log_group, query):
+        queue: Deque["Subquery"] = deque()
+
+        for start_ts, end_ts in batch_windows:
+            if self._queue_is_full(queue):
+                query_obj = self._get_completed_query(queue)
+                queue.append(
+                    Subquery(self.client, start_ts, end_ts, log_group, query).execute()
+                )
+                yield query_obj.get_results()
+            else:
+                queue.append(
+                    Subquery(self.client, start_ts, end_ts, log_group, query).execute()
+                )
+
+        # Clear queue to complete
+        while len(queue) > 0:
+            query_obj = self._get_completed_query(queue)
+            yield query_obj.get_results()
+
     def get_records_iterator(self, bookmark, log_group, query, batch_increment_s):
         """Retrieve records from Cloudwatch."""
         end_time = datetime.now(timezone.utc).timestamp()
@@ -104,104 +126,4 @@ class CloudwatchAPI:
             start_time, end_time, batch_increment_s
         )
 
-        queue = deque()
-        for window in batch_windows:
-            if len(queue) < (self.max_concurrent_queries - 1):
-                queue.append(
-                    (
-                        self._start_query(window[0], window[1], log_group, query),
-                        window[0],
-                        window[1],
-                    )
-                )
-            else:
-                query_id, start, end = queue.popleft()
-                queue.append(
-                    (
-                        self._start_query(window[0], window[1], log_group, query),
-                        window[0],
-                        window[1],
-                    )
-                )
-                results = self._get_results(log_group, start, end, query, query_id)
-                yield results
-
-        while len(queue) > 0:
-            query_id, start, end = queue.popleft()
-            results = self._get_results(log_group, start, end, query, query_id)
-            yield results
-
-    def _handle_limit_exceeded(
-        self, response, log_group, query_start, query_end, query
-    ):
-        results = response.get("results")
-        last_record = results[-1]
-
-        latest_ts_str = [i["value"] for i in last_record if i["field"] == "@timestamp"][
-            0
-        ]
-        # Include latest ts in query, this could cause duplicates but
-        # without it we might miss ties
-        new_query_start = int(
-            datetime.fromisoformat(latest_ts_str).replace(tzinfo=pytz.UTC).timestamp()
-        )
-        new_query_id = self._start_query(new_query_start, query_end, log_group, query)
-        return self._get_results(
-            log_group, new_query_start, query_end, query, new_query_id
-        )
-
-    def _alter_query(self, query):
-        query += " | sort @timestamp asc"
-        return query
-
-    def _start_query(self, query_start, query_end, log_group, query, prev_start=None):
-        self.logger.info(
-            (
-                "Submitting query for batch from:"
-                f" `{datetime.utcfromtimestamp(query_start).isoformat()} UTC` -"
-                f" `{datetime.utcfromtimestamp(query_end).isoformat()} UTC`"
-            )
-        )
-        query = self._alter_query(query)
-        start_query_response = self.client.start_query(
-            logGroupName=log_group,
-            startTime=query_start,
-            endTime=query_end,
-            queryString=query,
-            limit=self.limit,
-        )
-        return start_query_response["queryId"]
-
-    def _get_results(
-        self, log_group, query_start, query_end, query, query_id, prev_start=None
-    ):
-        self.logger.info(
-            (
-                "Retrieving results for batch from:"
-                f" `{datetime.utcfromtimestamp(query_start).isoformat()} UTC` -"
-                f" `{datetime.utcfromtimestamp(query_end).isoformat()} UTC`"
-            )
-        )
-        response = self.client.get_query_results(queryId=query_id)
-        while response is None or response["status"] == "Running":
-            time.sleep(0.5)
-            response = self.client.get_query_results(queryId=query_id)
-        if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
-            raise Exception(f"Failed: {response}")
-        result_size = response.get("statistics", {}).get("recordsMatched")
-        results = response["results"]
-        self.logger.info(f"Result set size '{int(result_size)}' received.")
-        if result_size > self.limit:
-            if prev_start == query_start:
-                raise Exception(
-                    "Stuck in a loop, smaller batch still exceeds limit."
-                    "Reduce batch window."
-                )
-            self.logger.info(
-                f"Result set size '{int(result_size)}' exceeded limit "
-                f"'{self.limit}'. Re-running sub-batch..."
-            )
-            results += self._handle_limit_exceeded(
-                response, log_group, query_start, query_end, query
-            )
-        return results
+        yield from self._iterate_batches(batch_windows, log_group, query)
