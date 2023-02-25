@@ -57,7 +57,8 @@ class Subquery:
             first = False
             response = self.client.get_query_results(queryId=self.query_id)
             status = response["status"]
-            if status in ("Failed", "Cancelled", "Timeout", "Scheduled", "Unknown"):
+            # TODO: handle Scheduled and Unknown. Need to wait before retrying.
+            if status in ("Failed", "Cancelled", "Timeout"):
                 # Retry the query
                 if retry:
                     self.logger.info(f"Status: {status}. Retrying...")
