@@ -24,6 +24,29 @@ class CloudWatchStream(Stream):
         """
         return True
 
+    @property
+    def check_sorted(self) -> bool:
+        """Check if stream is sorted.
+
+        This setting enables additional checks which may trigger
+        `InvalidStreamSortException` if records are found which are unsorted.
+
+        Returns
+        -------
+            `True` if sorting is checked. Defaults to `True`.
+
+        """
+        # The stream is sorted but when the limit is exceeded we recursively
+        # request sub-batches to get ever smaller batches until all data has been
+        # replicated. As part of that we use >= logic so some duplicates are
+        # created on the edges of the date range window. The requests are at seconds
+        # grain but the log timestamps are at the millisecond grain, which causes this
+        # to throw an exception if the max is like `2023-02-20 06:01:57.792` because the
+        # sub-batch filter is `2023-02-20 06:01:57` and we get some records that are
+        # matching the start date but are smaller than the previous max like
+        # `2023-02-20 06:01:57.009`. For that reason it is disabled.
+        return False
+
     def get_records(self, context: Optional[dict]) -> Iterable[dict]:
         """Return a generator of record-type dictionary objects.
 
