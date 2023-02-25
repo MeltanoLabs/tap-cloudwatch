@@ -1,3 +1,4 @@
+"""Class for managing a Subquery."""
 import logging
 import time
 from datetime import datetime
@@ -6,7 +7,10 @@ import pytz
 
 
 class Subquery:
+    """Subquery managing a Subquery."""
+
     def __init__(self, client, start_ts, end_ts, log_group, query):
+        """Initialize Subquery."""
         self.logger = logging.getLogger(__name__)
         self.client = client
         self.start_ts = start_ts
@@ -17,6 +21,7 @@ class Subquery:
         self.limit = 10000
 
     def execute(self):
+        """Run the query."""
         self.logger.info(
             (
                 "Submitting query for batch from:"
@@ -35,6 +40,7 @@ class Subquery:
         return self
 
     def get_results(self, prev_start=None):
+        """Get results from query and recurse if needed."""
         self.logger.info(
             (
                 "Retrieving results for batch from:"
