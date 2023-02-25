@@ -103,10 +103,14 @@ class CloudwatchAPI:
         for start_ts, end_ts in batch_windows:
             if self._queue_is_full(queue):
                 query_obj = self._get_completed_query(queue)
-                queue.append(Subquery(self.client, start_ts, end_ts, log_group, query).execute())
+                queue.append(
+                    Subquery(self.client, start_ts, end_ts, log_group, query).execute()
+                )
                 yield query_obj.get_results()
             else:
-                queue.append(Subquery(self.client, start_ts, end_ts, log_group, query).execute())
+                queue.append(
+                    Subquery(self.client, start_ts, end_ts, log_group, query).execute()
+                )
 
         # Clear queue to complete
         while len(queue) > 0:
