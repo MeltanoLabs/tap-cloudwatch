@@ -50,10 +50,14 @@ class Subquery:
         )
         response = None
         retry = True
+        first = True
         while response is None or response["status"] != "Complete":
+            if not first:
+                time.sleep(0.5)
+            first = False
             response = self.client.get_query_results(queryId=self.query_id)
             status = response["status"]
-            if status in ("Failed", "Cancelled", "Timeout"):
+            if status in ("Failed", "Cancelled", "Timeout", "Scheduled", "Unknown"):
                 # Retry the query
                 if retry:
                     self.logger.info(f"Status: {status}. Retrying...")
@@ -61,7 +65,6 @@ class Subquery:
                     retry = False
                 else:
                     break
-            time.sleep(0.5)
 
         if (
             response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200
