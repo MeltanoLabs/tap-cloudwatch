@@ -57,7 +57,6 @@ class Subquery:
             first = False
             response = self.client.get_query_results(queryId=self.query_id)
             status = response["status"]
-            # TODO: handle Scheduled and Unknown. Need to wait before retrying.
             if status in ("Failed", "Cancelled", "Timeout"):
                 # Retry the query
                 if retry:
@@ -66,6 +65,8 @@ class Subquery:
                     retry = False
                 else:
                     break
+            if status in ("Scheduled", "Unknown"):
+                self.logger.info(f"Status: {status}, continuing to poll.")
 
         if (
             response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200
