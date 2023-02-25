@@ -189,7 +189,7 @@ def test_handle_limit_exceeded(patch_result, execute):
 
     query_obj = Subquery("", "", "", "", "")
     query_obj.query_id = "123"
-    output = query_obj._handle_limit_exceeded(response)
+    query_obj._handle_limit_exceeded(response)
 
     patch_result.assert_called()
     execute.assert_called()
