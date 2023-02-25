@@ -1,13 +1,14 @@
 """Tests subquery module."""
 
-import boto3
-from botocore.stub import Stubber
-from freezegun import freeze_time
+from contextlib import nullcontext as does_not_raise
 from unittest.mock import patch
 
-from tap_cloudwatch.subquery import Subquery
+import boto3
 import pytest
-from contextlib import nullcontext as does_not_raise
+from botocore.stub import Stubber
+from freezegun import freeze_time
+
+from tap_cloudwatch.subquery import Subquery
 
 
 @freeze_time("2022-12-30")
