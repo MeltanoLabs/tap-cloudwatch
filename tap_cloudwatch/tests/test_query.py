@@ -58,6 +58,61 @@ def test_subquery():
 
     assert response["results"] == output
 
+@freeze_time("2022-12-30")
+def test_subquery_incomplete():
+    """Run subquery test."""
+    client = boto3.client("logs", region_name="us-east-1")
+    stubber = Stubber(client)
+    query_start = 1672272000
+    query_end = 1672275600
+    log_group = "my_log_group_name"
+    in_query = "fields @timestamp, @message"
+
+    response = {
+        "status": "Failed",
+        "results": [
+            [
+                {"field": "@timestamp", "value": "2022-01-01"},
+                {"field": "@message", "value": "abc"},
+            ]
+        ],
+        "ResponseMetadata": {"HTTPStatusCode": 200},
+        "statistics": {"recordsMatched": 10000},
+    }
+    stubber.add_response(
+        "start_query",
+        {"queryId": "123"},
+        {
+            "endTime": query_end,
+            "limit": 10000,
+            "logGroupName": log_group,
+            "queryString": in_query + " | sort @timestamp asc",
+            "startTime": query_start,
+        },
+    )
+    stubber.add_response(
+        "get_query_results",
+        {
+            "status": "Scheduled",
+            "ResponseMetadata": {"HTTPStatusCode": 200},
+            "statistics": {'recordsMatched': 0.0},
+            "results": []
+        },
+        {"queryId": "123"},
+    )
+    stubber.add_response(
+        "get_query_results",
+        response,
+        {"queryId": "123"},
+    )
+    stubber.activate()
+
+    query_obj = Subquery(client, query_start, query_end, log_group, in_query)
+    query_obj.execute()
+    output = query_obj.get_results()
+
+    assert response["results"] == output
+
 @patch.object(Subquery, "_handle_limit_exceeded", return_value=["foo"])
 def test_subquery_limit_exceeded(patch_limit):
     """Run subquery test."""
@@ -97,7 +152,7 @@ def test_subquery_limit_exceeded(patch_limit):
 
 @patch.object(Subquery, "execute")
 @patch.object(Subquery, "get_results")
-def test__handle_limit_exceeded(patch_result, execute):
+def test_handle_limit_exceeded(patch_result, execute):
     """Run subquery test."""
     response = {
         "status": "Complete",
