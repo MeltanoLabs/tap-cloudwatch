@@ -21,7 +21,7 @@ from tap_cloudwatch.exception import InvalidQueryException
     ],
 )
 def test_split_batch_into_windows(start, end, batch, expected):
-    """Run standard tap tests from the SDK."""
+    """Test _split_batch_into_windows."""
     api = CloudwatchAPI(None)
     batches = api._split_batch_into_windows(start, end, batch)
     assert batches == expected
