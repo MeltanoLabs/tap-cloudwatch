@@ -64,19 +64,25 @@ class CloudwatchAPI:
         return logs
 
     def _split_batch_into_windows(self, start_time, end_time, batch_increment_s):
-        start_time_int = start_time.timestamp()
-        end_time_int = end_time.timestamp()
-        diff_s = end_time_int - start_time_int
+        start_time_epoch = start_time.timestamp()
+        end_time_epoch = end_time.timestamp()
+        diff_s = end_time_epoch - start_time_epoch
         total_batches = ceil(diff_s / batch_increment_s)
         batch_windows = []
         for batch_num in range(total_batches):
             if batch_num != 0:
                 # Inclusive start and end date, so on second iteration
                 # we can skip one second.
-                query_start = int(start_time_int + (batch_increment_s * batch_num) + 1)
+                query_start = int(
+                    start_time_epoch + (batch_increment_s * batch_num) + 1
+                )
             else:
-                query_start = int(start_time_int + (batch_increment_s * batch_num))
-            query_end = int(start_time_int + (batch_increment_s * (batch_num + 1)))
+                query_start = int(start_time_epoch + (batch_increment_s * batch_num))
+            # Never exceed the end_time
+            query_end = min(
+                int(start_time_epoch + (batch_increment_s * (batch_num + 1))),
+                int(end_time_epoch),
+            )
             batch_windows.append((query_start, query_end))
         return batch_windows
 

@@ -1,17 +1,13 @@
 """Tests cloudwatch api module."""
 
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, timezone
 
 import pytest
 from freezegun import freeze_time
 
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
 from tap_cloudwatch.exception import InvalidQueryException
-
-
-def datetime_from_str(date_str):
-    return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+from tap_cloudwatch.tests.utils import datetime_from_str
 
 
 @pytest.mark.parametrize(
@@ -39,7 +35,7 @@ def datetime_from_str(date_str):
                 ),
                 (
                     datetime_from_str("2022-12-29 01:00:01").timestamp(),
-                    datetime_from_str("2022-12-29 02:00:00").timestamp(),
+                    datetime_from_str("2022-12-29 01:00:01").timestamp(),
                 ),
             ],
         ],

@@ -9,6 +9,7 @@ from singer_sdk.testing import get_standard_tap_tests
 
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
 from tap_cloudwatch.tap import TapCloudWatch
+from tap_cloudwatch.tests.utils import datetime_from_str
 
 SAMPLE_CONFIG = {
     "log_group_name": "my_log_group_name",
@@ -31,11 +32,11 @@ def test_standard_tap_tests(patch_client):
         "start_query",
         {"queryId": "123"},
         {
-            "endTime": 1672358400,
+            "endTime": int(datetime_from_str("2022-12-29 23:55:00").timestamp()),
             "limit": 10000,
             "logGroupName": "my_log_group_name",
             "queryString": "fields @timestamp, @message | sort @timestamp asc",
-            "startTime": 1672272000,
+            "startTime": int(datetime_from_str("2022-12-29 00:00:00").timestamp()),
         },
     )
     stubber.add_response(
