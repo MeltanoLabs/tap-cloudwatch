@@ -1,31 +1,65 @@
 """Tests cloudwatch api module."""
 
 from contextlib import nullcontext as does_not_raise
+from datetime import datetime, timezone
 
 import pytest
+from freezegun import freeze_time
 
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
 from tap_cloudwatch.exception import InvalidQueryException
 
 
+def datetime_from_str(date_str):
+    return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
+
 @pytest.mark.parametrize(
     "start,end,batch,expected",
     [
-        [1672272000, 1672275600, 3600, [(1672272000, 1672275600)]],
         [
-            1672272000,
-            1672275601,
-            3600,
-            [(1672272000, 1672275600), (1672275601, 1672279200)],
-        ],
-        [
-            1672272000,
-            1672282800,
+            datetime_from_str("2022-12-29 00:00:00"),
+            datetime_from_str("2022-12-29 01:00:00"),
             3600,
             [
-                (1672272000, 1672275600),
-                (1672275601, 1672279200),
-                (1672279201, 1672282800),
+                (
+                    datetime_from_str("2022-12-29 00:00:00").timestamp(),
+                    datetime_from_str("2022-12-29 01:00:00").timestamp(),
+                )
+            ],
+        ],
+        [
+            datetime_from_str("2022-12-29 00:00:00"),
+            datetime_from_str("2022-12-29 01:00:01"),
+            3600,
+            [
+                (
+                    datetime_from_str("2022-12-29 00:00:00").timestamp(),
+                    datetime_from_str("2022-12-29 01:00:00").timestamp(),
+                ),
+                (
+                    datetime_from_str("2022-12-29 01:00:01").timestamp(),
+                    datetime_from_str("2022-12-29 02:00:00").timestamp(),
+                ),
+            ],
+        ],
+        [
+            datetime_from_str("2022-12-29 00:00:00"),
+            datetime_from_str("2022-12-29 03:00:00"),
+            3600,
+            [
+                (
+                    datetime_from_str("2022-12-29 00:00:00").timestamp(),
+                    datetime_from_str("2022-12-29 01:00:00").timestamp(),
+                ),
+                (
+                    datetime_from_str("2022-12-29 01:00:01").timestamp(),
+                    datetime_from_str("2022-12-29 02:00:00").timestamp(),
+                ),
+                (
+                    datetime_from_str("2022-12-29 02:00:01").timestamp(),
+                    datetime_from_str("2022-12-29 03:00:00").timestamp(),
+                ),
             ],
         ],
     ],
@@ -55,3 +89,23 @@ def test_validate_query(query, expectation):
     api = CloudwatchAPI(None)
     with expectation:
         api._validate_query(query)
+
+
+@pytest.mark.parametrize(
+    "input_end_ts,expectation",
+    [
+        [None, datetime_from_str("2022-12-29 23:55:00")],
+        [
+            datetime_from_str("2022-12-29 00:00:00"),
+            datetime_from_str("2022-12-29 00:00:00"),
+        ],
+        [
+            datetime_from_str("2022-12-29 23:59:00"),
+            datetime_from_str("2022-12-29 23:55:00"),
+        ],
+    ],
+)
+@freeze_time("2022-12-30")
+def test_alter_end_ts(input_end_ts, expectation):
+    api = CloudwatchAPI(None)
+    assert api._alter_end_ts(input_end_ts) == expectation
