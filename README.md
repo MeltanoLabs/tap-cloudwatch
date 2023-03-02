@@ -35,6 +35,14 @@ Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 
 A full list of supported settings and capabilities is available by running: `tap-cloudwatch --about`
 
+### Implementation Details
+
+1. The tap always leaves a 5 minute buffer from realtime to handle any late or out of order logs on the Cloudwatch side to guarantee all data is replicated.
+Challenges related to this were first observed and discussed in https://github.com/MeltanoLabs/tap-cloudwatch/issues/25.
+It means that if you run the tap with no `end_date` configured it will attempt to retrieve data up until current time minus 5 mins.
+2. Currently the tap uses a limit of 20 queries at a time. It sends a start_query API call then goes back to retrieve the data later once the query has completed.
+
+
 ### Configure using environment variables
 
 This Singer tap will automatically import any environment variables within the working directory's
