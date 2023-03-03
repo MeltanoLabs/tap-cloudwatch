@@ -24,6 +24,7 @@ Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 | aws_endpoint_url     | False    | None    | The complete URL to use for the constructed client. |
 | aws_region_name      | False    | None    | The AWS region name (e.g. us-east-1)  |
 | start_date           | True     | None    | The earliest record date to sync |
+| end_date             | False    | None    | The last record date to sync. This tap uses a 5 minute buffer to allow Cloudwatch logs to arrive in full. If you request data from current time it will automatically adjust your end_date to now - 5 mins. |
 | log_group_name       | True     | None    | The log group on which to perform the query. |
 | query                | True     | None    | The query string to use. For more information, see [CloudWatch Logs Insights Query Syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html). |
 | batch_increment_s    | False    |    3600 | The size of the time window to query by, default 3,600 seconds (i.e. 1 hour). If the result set for a batch is greater than the max limit of 10,000 records then the tap will query the same window again where >= the most recent record received. This means that the same data is potentially being scanned >1 times but < 2 times, depending on the amount the results set went over the 10k max. For example a batch window with 15k records would scan the 15k once, receiving 10k results, then scan ~5k again to get the rest. The net result is the same data was scanned ~1.5 times for that batch. To avoid this you should set the batch window to avoid exceeding the 10k limit. |
@@ -33,6 +34,14 @@ Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 | flattening_max_depth | False    | None    | The max depth to flatten schemas. |
 
 A full list of supported settings and capabilities is available by running: `tap-cloudwatch --about`
+
+### Implementation Details
+
+1. The tap always leaves a 5 minute buffer from realtime to handle any late or out of order logs on the Cloudwatch side to guarantee all data is replicated.
+Challenges related to this were first observed and discussed in https://github.com/MeltanoLabs/tap-cloudwatch/issues/25.
+It means that if you run the tap with no `end_date` configured it will attempt to retrieve data up until current time minus 5 mins.
+2. Currently the tap uses a limit of 20 queries at a time. It sends a start_query API call then goes back to retrieve the data later once the query has completed.
+
 
 ### Configure using environment variables
 

@@ -64,6 +64,16 @@ class TapCloudWatch(Tap):
             description="The earliest record date to sync",
         ),
         th.Property(
+            "end_date",
+            th.DateTimeType,
+            description=(
+                "The last record date to sync. This tap uses a 5 minute buffer to "
+                "allow Cloudwatch logs to arrive in full. If you request data from "
+                "current time it will automatically adjust your end_date to now -"
+                " 5 mins."
+            ),
+        ),
+        th.Property(
             "log_group_name",
             th.StringType,
             required=True,

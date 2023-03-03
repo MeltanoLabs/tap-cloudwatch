@@ -64,6 +64,7 @@ class CloudWatchStream(Stream):
             self.config.get("log_group_name"),
             self.config.get("query"),
             self.config.get("batch_increment_s"),
+            self.config.get("end_date"),
         )
         for batch in cloudwatch_iter:
             for record in batch:
