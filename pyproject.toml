@@ -20,7 +20,7 @@ boto3 = "^1.26.142"
 s3 = ["fs-s3fs"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^6.2.5"
+pytest = "^7.4.0"
 tox = "^3.28.0"
 flake8 = "^3.9.2"
 pydocstyle = "^6.3.0"
