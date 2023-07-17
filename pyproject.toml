@@ -14,7 +14,7 @@ python = "<3.11,>=3.7.1"
 requests = "^2.28.2"
 singer-sdk = "^0"
 fs-s3fs = { version = "^1.1.1", optional = true}
-boto3 = "^1.26.142"
+boto3 = "^1.28.3"
 
 [tool.poetry.extras]
 s3 = ["fs-s3fs"]
