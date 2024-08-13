@@ -1,10 +1,11 @@
 """Class for interacting with Cloudwatch API."""
 
+from __future__ import annotations
+
 import os
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from math import ceil
-from typing import Deque
 
 import boto3
 
@@ -106,7 +107,7 @@ class CloudwatchAPI:
         return queue.popleft()
 
     def _iterate_batches(self, batch_windows, log_group, query):
-        queue: Deque["Subquery"] = deque()
+        queue: deque[Subquery] = deque()
 
         for start_ts, end_ts in batch_windows:
             if self._queue_is_full(queue):

@@ -1,10 +1,15 @@
 """Custom client handling, including CloudWatchStream base class."""
 
-from typing import Iterable, Optional
+from __future__ import annotations
+
+import typing as t
 
 from singer_sdk.streams import Stream
 
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
+
+if t.TYPE_CHECKING:
+    from singer_sdk.helpers.types import Context
 
 
 class CloudWatchStream(Stream):
@@ -47,7 +52,7 @@ class CloudWatchStream(Stream):
         # `2023-02-20 06:01:57.009`. For that reason it is disabled.
         return False
 
-    def get_records(self, context: Optional[dict]) -> Iterable[dict]:
+    def get_records(self, context: Context | None) -> t.Iterable[dict]:
         """Return a generator of record-type dictionary objects.
 
         The optional `context` argument is used to identify a specific slice of the

@@ -1,6 +1,6 @@
 """Stream type classes for tap-cloudwatch."""
 
-from typing import List
+from __future__ import annotations
 
 from singer_sdk import typing as th
 
@@ -11,13 +11,13 @@ class LogStream(CloudWatchStream):
     """Log stream."""
 
     name = "log"
-    primary_keys: List[str] = ["ptr"]
+    primary_keys: list[str] = ["ptr"]
     replication_key = "timestamp"
 
     @property
     def schema(self):
         """Dynamically detect the json schema for the stream."""
-        properties: List[th.Property] = []
+        properties: list[th.Property] = []
 
         # TODO: handle parse and unmask syntax
         # | parse @message "[*] *" as loggingType, loggingMessage

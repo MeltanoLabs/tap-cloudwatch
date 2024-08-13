@@ -1,4 +1,7 @@
 """Class for managing a Subquery."""
+
+from __future__ import annotations
+
 import logging
 import time
 from datetime import datetime
@@ -23,11 +26,9 @@ class Subquery:
     def execute(self):
         """Run the query."""
         self.logger.info(
-            (
-                "Submitting query for batch from:"
-                f" `{datetime.utcfromtimestamp(self.start_ts).isoformat()} UTC` -"
-                f" `{datetime.utcfromtimestamp(self.end_ts).isoformat()} UTC`"
-            )
+            "Submitting query for batch from:"
+            f" `{datetime.utcfromtimestamp(self.start_ts).isoformat()} UTC` -"
+            f" `{datetime.utcfromtimestamp(self.end_ts).isoformat()} UTC`"
         )
         start_query_response = self.client.start_query(
             logGroupName=self.log_group,
@@ -42,11 +43,9 @@ class Subquery:
     def get_results(self, prev_start=None):
         """Get results from query and recurse if needed."""
         self.logger.info(
-            (
-                "Retrieving results for batch from:"
-                f" `{datetime.utcfromtimestamp(self.start_ts).isoformat()} UTC` -"
-                f" `{datetime.utcfromtimestamp(self.end_ts).isoformat()} UTC`"
-            )
+            "Retrieving results for batch from:"
+            f" `{datetime.utcfromtimestamp(self.start_ts).isoformat()} UTC` -"
+            f" `{datetime.utcfromtimestamp(self.end_ts).isoformat()} UTC`"
         )
         response = None
         retry = True
