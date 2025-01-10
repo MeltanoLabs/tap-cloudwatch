@@ -9,7 +9,8 @@ from singer_sdk.testing import get_standard_tap_tests
 
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
 from tap_cloudwatch.tap import TapCloudWatch
-from tap_cloudwatch.tests.utils import datetime_from_str
+
+from .utils import datetime_from_str
 
 SAMPLE_CONFIG = {
     "log_group_name": "my_log_group_name",

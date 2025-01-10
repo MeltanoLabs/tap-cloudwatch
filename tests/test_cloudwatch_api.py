@@ -7,7 +7,8 @@ from freezegun import freeze_time
 
 from tap_cloudwatch.cloudwatch_api import CloudwatchAPI
 from tap_cloudwatch.exception import InvalidQueryException
-from tap_cloudwatch.tests.utils import datetime_from_str
+
+from .utils import datetime_from_str
 
 
 @pytest.mark.parametrize(

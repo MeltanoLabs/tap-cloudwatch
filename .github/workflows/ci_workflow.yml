@@ -12,24 +12,27 @@ jobs:
     strategy:
       matrix:
         # Only lint using the primary version used for dev
-        python-version: ["3.9"]
+        python-version: ["3.12"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install Poetry
+    - name: Install tools
+      env:
+        PIP_CONSTRAINT: ${{ github.workspace }}/.github/workflows/constraints.txt
       run: |
         python -m pip install --upgrade pip
-        pip install poetry==1.2.*
+        pipx install poetry
+        pipx install tox
     - name: Install dependencies
       run: |
         poetry install
-    - name: Run lint command from tox.ini
+    - name: Lint
       run: |
-        poetry run tox -e lint
+        tox -e lint
 
   pytest:
 
@@ -37,21 +40,32 @@ jobs:
     env:
       GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version:
+        - "3.13"
+        - "3.12"
+        - "3.11"
+        - "3.10"
+        - "3.9"
+        - "3.8"
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install Poetry
+        allow-prereleases: true
+    - name: Install tools
+      env:
+        PIP_CONSTRAINT: ${{ github.workspace }}/.github/workflows/constraints.txt
       run: |
         python -m pip install --upgrade pip
-        pip install poetry==1.2.*
+        pipx install poetry
     - name: Install dependencies
       run: |
+        poetry env use python${{ matrix.python-version }}
         poetry install
     - name: Test with pytest
       run: |
