@@ -83,32 +83,32 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.33.13"
+version = "1.35.97"
 description = "The AWS SDK for Python"
 optional = false
-python-versions = ">= 3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.33.13-py3-none-any.whl", hash = "sha256:5f278b95fb2b32f3d09d950759a05664357ba35d81107bab1537c4ddd212cd8c"},
-    {file = "boto3-1.33.13.tar.gz", hash = "sha256:0e966b8a475ecb06cc0846304454b8da2473d4c8198a45dfb2c5304871986883"},
+    {file = "boto3-1.35.97-py3-none-any.whl", hash = "sha256:8e49416216a6e3a62c2a0c44fba4dd2852c85472e7b702516605b1363867d220"},
+    {file = "boto3-1.35.97.tar.gz", hash = "sha256:7d398f66a11e67777c189d1f58c0a75d9d60f98d0ee51b8817e828930bf19e4e"},
 ]
 
 [package.dependencies]
-botocore = ">=1.33.13,<1.34.0"
+botocore = ">=1.35.97,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
-s3transfer = ">=0.8.2,<0.9.0"
+s3transfer = ">=0.10.0,<0.11.0"
 
 [package.extras]
 crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.33.13"
+version = "1.35.97"
 description = "Low-level, data-driven core of boto 3."
 optional = false
-python-versions = ">= 3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.33.13-py3-none-any.whl", hash = "sha256:aeadccf4b7c674c7d47e713ef34671b834bc3e89723ef96d994409c9f54666e6"},
-    {file = "botocore-1.33.13.tar.gz", hash = "sha256:fb577f4cb175605527458b04571451db1bd1a2036976b626206036acd4496617"},
+    {file = "botocore-1.35.97-py3-none-any.whl", hash = "sha256:fed4f156b1a9b8ece53738f702ba5851b8c6216b4952de326547f349cc494f14"},
+    {file = "botocore-1.35.97.tar.gz", hash = "sha256:88f2fab29192ffe2f2115d5bafbbd823ff4b6eb2774296e03ec8b5b0fe074f61"},
 ]
 
 [package.dependencies]
@@ -116,11 +116,11 @@ jmespath = ">=0.7.1,<2.0.0"
 python-dateutil = ">=2.1,<3.0.0"
 urllib3 = [
     {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
-    {version = ">=1.25.4,<2.1", markers = "python_version >= \"3.10\""},
+    {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""},
 ]
 
 [package.extras]
-crt = ["awscrt (==0.19.17)"]
+crt = ["awscrt (==0.22.0)"]
 
 [[package]]
 name = "certifi"
@@ -1021,13 +1021,13 @@ files = [
 
 [[package]]
 name = "s3transfer"
-version = "0.8.2"
+version = "0.10.4"
 description = "An Amazon S3 Transfer Manager"
 optional = false
-python-versions = ">= 3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "s3transfer-0.8.2-py3-none-any.whl", hash = "sha256:c9e56cbe88b28d8e197cf841f1f0c130f246595e77ae5b5a05b69fe7cb83de76"},
-    {file = "s3transfer-0.8.2.tar.gz", hash = "sha256:368ac6876a9e9ed91f6bc86581e319be08188dc60d50e0d56308ed5765446283"},
+    {file = "s3transfer-0.10.4-py3-none-any.whl", hash = "sha256:244a76a24355363a68164241438de1b72f8781664920260c48465896b712a41e"},
+    {file = "s3transfer-0.10.4.tar.gz", hash = "sha256:29edc09801743c21eb5ecbc617a152df41d3c287f67b615f73e5f750583666a7"},
 ]
 
 [package.dependencies]
@@ -1376,4 +1376,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8"
-content-hash = "dae18cdd253a2c4c892592d68cef8437d71701eb6d8d855b766f0ea031e6a325"
+content-hash = "b27cd7fe4223ed69f5a65a669fab562fefe4c5803ea4c976d5001a09dce7d5c1"
